@@ -1,0 +1,88 @@
+.App {
+    text-align: center;
+    min-height: 100vh;
+}
+
+.image-form {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.image-viewer {
+    border: 2px dashed #aaa;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.image-viewer img {
+    max-width: 100%;
+    max-height: 300px;
+    margin-top: 20px;
+}
+
+.image-viewer p {
+    margin: 20px 0;
+    color: #555;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+
+.dark-mode {
+    background-color: #333;
+    color: #fff;
+}
+
+.dark-mode .image-viewer {
+    border-color: #888;
+}
+
+.dark-mode .image-viewer .drag-drop {
+    color : white;
+}
+
+.dark-mode button {
+    background-color: #555;
+    color: #ddd;
+}
+
+.dark-mode button:hover {
+    background-color: #666;
+}
+
+.result-card {
+    background: #ddd;
+    border-radius: 8px;
+    padding : 20px;
+    margin : 10px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .result-card {
+    background: #333;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 10px 0;
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+}
