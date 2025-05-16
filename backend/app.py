@@ -3,19 +3,26 @@ from flask_cors import CORS
 from PIL import Image
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model
 
 app = Flask(__name__)
 CORS(app)  
 
-# Load the trained model once
-model = load_model('eye_disease_model.tflite')
+# Initialize TFLite interpreter properly
+interpreter = tf.lite.Interpreter(model_path='eye_disease_model.tflite')
+interpreter.allocate_tensors()
 
-# Define class names
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
 class_names = ['cataract', 'diabetic_retinopathy', 'glaucoma', 'normal']
-image_size = (224, 224)  
+image_size = (224, 224)
+
+@app.route('/')
+def home():
+    return "Backend is running"
+
 @app.route('/predict', methods=['POST'])
-def predict():
+def predictt():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
 
@@ -24,18 +31,19 @@ def predict():
         return jsonify({'error': 'Empty file received'}), 400
 
     try:
-        # Preprocess the uploaded image
         img = Image.open(file).convert('RGB').resize(image_size)
-        img_array = np.array(img) / 255.0
+        img_array = np.array(img, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
-        # Make prediction
-        predictions = model.predict(img_array)
+        interpreter.set_tensor(input_details[0]['index'], img_array)
+        interpreter.invoke()
+        predictions = interpreter.get_tensor(output_details[0]['index'])
+
         class_index = int(np.argmax(predictions[0]))
         accuracy = float(np.max(predictions[0])) * 100.0
 
         result = {
-            'model': 'Eye Disease Classifier ',
+            'model': 'Eye Disease Classifier',
             'name': class_names[class_index],
             'predicted_class': class_index,
             'accuracy': f"{accuracy:.2f}%",
