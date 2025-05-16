@@ -66,4 +66,4 @@ def suggest_remedy(class_name):
     return remedies.get(class_name, 'No specific remedy found.')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
