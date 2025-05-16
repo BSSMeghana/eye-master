@@ -58,13 +58,10 @@ def predict():
         }
 
         print("Sending prediction result")
-        response = jsonify({'result': [result]})
-        print(f"Response JSON: {response.get_json()}")
-        return response
+        return jsonify({'result': [result]})
     except Exception as e:
         print(f"Error in prediction: {e}")
         return jsonify({'error': str(e)}), 500
-
 
 
 def suggest_remedy(class_name):
@@ -78,4 +75,3 @@ def suggest_remedy(class_name):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
-
