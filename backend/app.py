@@ -3,6 +3,7 @@ from flask_cors import CORS
 from PIL import Image
 import numpy as np
 import tensorflow as tf
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -66,4 +67,5 @@ def suggest_remedy(class_name):
     return remedies.get(class_name, 'No specific remedy found.')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+
