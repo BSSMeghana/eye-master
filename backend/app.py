@@ -6,15 +6,18 @@ import tensorflow as tf
 import os
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)  # Use wildcard for dev
+
+# ✅ Specify the exact origin your Expo app runs on
+CORS(app, resources={r"/*": {"origins": "http://localhost:8081"}}, supports_credentials=True)
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')  # or 'http://localhost:8081'
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8081')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
-    
+
 # Load TFLite model and allocate tensors
 interpreter = tf.lite.Interpreter(model_path='eye_disease_model.tflite')
 interpreter.allocate_tensors()
