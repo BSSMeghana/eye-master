@@ -6,7 +6,7 @@ import tensorflow as tf
 import os
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:8081"])
+CORS(app)
 
 # Load TFLite model and allocate tensors
 interpreter = tf.lite.Interpreter(model_path='eye_disease_model.tflite')
