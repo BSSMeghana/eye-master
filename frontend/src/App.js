@@ -4,10 +4,11 @@ import './App.css';
 function App() {
     const [image, setImage] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
-    const fileInputRef = useRef();
     const [results, setResults] = useState([]);
     const [darkMode, setDarkMode] = useState(false);
-
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const fileInputRef = useRef();
 
     const toggleDarkMode = () => {
         setDarkMode(!darkMode);
@@ -15,10 +16,12 @@ function App() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setError(null);
+        setLoading(true);
 
         if (!image) {
-            console.error('No image to submit');
+            setError('No image selected.');
+            setLoading(false);
             return;
         }
 
@@ -26,9 +29,9 @@ function App() {
         formData.append('file', image);
 
         try {
-            const response = await fetch('http://localhost:5000/predict', {
-                method: 'POST',
-                body: formData,
+            const response = await fetch('http://127.0.0.1:5000/predict', {
+            method: 'POST',
+            body: formData,
             });
 
             if (!response.ok) {
@@ -38,7 +41,9 @@ function App() {
             const data = await response.json();
             setResults(data.result);
         } catch (error) {
-            console.error('Error during image submission:', error);
+            setError('Error during image submission: ' + error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -61,6 +66,7 @@ function App() {
             setImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
+                setPreviewImage(reader.result);
             };
             reader.readAsDataURL(file);
         }
@@ -76,32 +82,44 @@ function App() {
 
     return (
         <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
-            <h1>SkinDisease Detection and Remedy</h1>
-            <button onClick={toggleDarkMode}>
-                {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            <h1>Eye Disease Detection and Remedy</h1>
+
+            <button onClick={toggleDarkMode} className="mode-toggle">
+                {darkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
             </button>
+
             <form className="image-form" onSubmit={handleSubmit}>
                 <div className="image-viewer"
                      onClick={handleClick}
                      onDrop={handleDrop}
                      onDragOver={handleDragOver}>
-                    { previewImage && <img src={previewImage} alt="Preview" />  }
-                    <p className='drag-drop'>Drag & Drop or Click to Select Image</p>
-                    <input type="file"
-                           ref={fileInputRef}
-                           onChange={handleImageChange}
-                           accept="image/*"
-                           style={{ display: 'none' }} />
+                    {previewImage ? (
+                        <img src={previewImage} alt="Preview" className="preview" />
+                    ) : (
+                        <p className="drag-drop">Drag & Drop or Click to Select Image</p>
+                    )}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageChange}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                    />
                 </div>
-                <button type="submit">Submit</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Submitting...' : 'Submit'}
+                </button>
             </form>
+
+            {error && <p className="error">{error}</p>}
+
             {results.map((result, index) => (
-                <div className='result-card' key={index}>
+                <div className="result-card" key={index}>
                     <h2>{result.model}</h2>
                     <h3>{result.name}</h3>
                     <p><strong>Class ID:</strong> {result.predicted_class}</p>
-                    <p>Result Accuracy : <strong>{result.accuracy}</strong></p>
-                    <p>{result.remedy}</p>
+                    <p><strong>Accuracy:</strong> {result.accuracy}</p>
+                    <p><strong>Remedy:</strong> {result.remedy}</p>
                 </div>
             ))}
         </div>
