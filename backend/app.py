@@ -25,6 +25,7 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    print("Received predict request")
     if 'file' not in request.files:
         print("No file in request")
         return jsonify({'error': 'No file uploaded'}), 400
@@ -35,16 +36,15 @@ def predict():
         return jsonify({'error': 'Empty file received'}), 400
 
     try:
-        print(f"Received file: {file.filename}")
         img = Image.open(file).convert('RGB').resize(image_size)
+        print("Image loaded and resized")
         img_array = np.array(img, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
         interpreter.set_tensor(input_details[0]['index'], img_array)
         interpreter.invoke()
         predictions = interpreter.get_tensor(output_details[0]['index'])
-
-        print("Predictions raw:", predictions)
+        print(f"Predictions: {predictions}")
 
         class_index = int(np.argmax(predictions[0]))
         accuracy = float(np.max(predictions[0])) * 100.0
@@ -57,11 +57,12 @@ def predict():
             'remedy': suggest_remedy(class_names[class_index])
         }
 
-        print("Result:", result)
+        print("Sending prediction result")
         return jsonify({'result': [result]})
     except Exception as e:
-        print("Exception:", str(e))
+        print(f"Error in prediction: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 def suggest_remedy(class_name):
     remedies = {
