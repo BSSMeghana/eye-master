@@ -1,16 +1,17 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  
+from flask_cors import CORS
 from PIL import Image
 import numpy as np
 import tensorflow as tf
 
 app = Flask(__name__)
-CORS(app)  
+CORS(app)
 
-# Initialize TFLite interpreter properly
+# Load TFLite model and allocate tensors
 interpreter = tf.lite.Interpreter(model_path='eye_disease_model.tflite')
 interpreter.allocate_tensors()
 
+# Get input and output tensor details
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
@@ -22,7 +23,7 @@ def home():
     return "Backend is running"
 
 @app.route('/predict', methods=['POST'])
-def predictt():
+def predict():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
 
@@ -35,6 +36,7 @@ def predictt():
         img_array = np.array(img, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
+        # Set the tensor to the image
         interpreter.set_tensor(input_details[0]['index'], img_array)
         interpreter.invoke()
         predictions = interpreter.get_tensor(output_details[0]['index'])
