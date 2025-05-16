@@ -36,32 +36,24 @@ def predict():
         return jsonify({'error': 'Empty file received'}), 400
 
     try:
+        # Just open and verify image, no prediction
         img = Image.open(file).convert('RGB').resize(image_size)
         print("Image loaded and resized")
-        img_array = np.array(img, dtype=np.float32) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
-
-        interpreter.set_tensor(input_details[0]['index'], img_array)
-        interpreter.invoke()
-        predictions = interpreter.get_tensor(output_details[0]['index'])
-        print(f"Predictions: {predictions}")
-
-        class_index = int(np.argmax(predictions[0]))
-        accuracy = float(np.max(predictions[0])) * 100.0
-
+        
+        # Dummy prediction response:
         result = {
             'model': 'Eye Disease Classifier',
-            'name': class_names[class_index],
-            'predicted_class': class_index,
-            'accuracy': f"{accuracy:.2f}%",
-            'remedy': suggest_remedy(class_names[class_index])
+            'name': 'dummy_class',
+            'predicted_class': 0,
+            'accuracy': "99.99%",
+            'remedy': 'No remedy for dummy class'
         }
-
-        print("Sending prediction result")
+        print("Sending dummy prediction result")
         return jsonify({'result': [result]})
     except Exception as e:
         print(f"Error in prediction: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 
 def suggest_remedy(class_name):
