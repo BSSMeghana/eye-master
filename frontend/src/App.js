@@ -76,7 +76,7 @@ function App() {
 
     return (
         <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
-            <h1>SkinDisease Detection and Remedy</h1>
+            <h1>Eye Disease Detection</h1>
             <button onClick={toggleDarkMode}>
                 {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             </button>
