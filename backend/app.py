@@ -1,60 +1,74 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  
 from PIL import Image
+from io import BytesIO
 import numpy as np
 import tensorflow as tf
-import os
+import imghdr
 
 app = Flask(__name__)
+CORS(app)
 
-# ✅ Specify the exact origin your Expo app runs on
-CORS(app, resources={r"/*": {"origins": "http://localhost:8081"}}, supports_credentials=True)
+# Load the trained DenseNet model once
+model = tf.keras.models.load_model('densenet.h5')
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8081')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
-
-# Load TFLite model and allocate tensors
-interpreter = tf.lite.Interpreter(model_path='eye_disease_model.tflite')
+# Load TFLite retina check model once
+interpreter = tf.lite.Interpreter(model_path="model_binaray.tflite")
 interpreter.allocate_tensors()
-
-# Get input and output tensor details
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
 class_names = ['cataract', 'diabetic_retinopathy', 'glaucoma', 'normal']
 image_size = (224, 224)
 
-@app.route('/')
-def home():
-    return "Backend is running"
+def preprocess_image_for_tflite(img):
+    img = img.resize(image_size).convert('RGB')
+    img_array = np.array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0).astype(np.float32)
+    return img_array
+
+def is_retina_image(img):
+    img_array = preprocess_image_for_tflite(img)
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+    prediction = np.round(output_data[0][0])
+    return bool(prediction)
+
+def preprocess_image_for_classification(img):
+    img = img.resize(image_size).convert('RGB')
+    img_array = np.array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    return img_array
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    print("Received predict request")
     if 'file' not in request.files:
-        print("No file in request")
         return jsonify({'error': 'No file uploaded'}), 400
 
     file = request.files['file']
     if file.filename == '':
-        print("Empty file received")
         return jsonify({'error': 'Empty file received'}), 400
 
     try:
-        img = Image.open(file).convert('RGB').resize(image_size)
-        print("Image loaded and resized")
-        img_array = np.array(img, dtype=np.float32) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
+        file_bytes = file.read()
+        file_type = imghdr.what(None, h=file_bytes)
+        if file_type not in ['jpeg', 'png', 'jpg']:
+            return jsonify({'error': 'Invalid image format. Use JPEG or PNG.'}), 400
 
-        interpreter.set_tensor(input_details[0]['index'], img_array)
-        interpreter.invoke()
-        predictions = interpreter.get_tensor(output_details[0]['index'])
-        print(f"Predictions: {predictions}")
+        # Use BytesIO to wrap the raw bytes for PIL Image open
+        img = Image.open(BytesIO(file_bytes)).convert('RGB')
+
+        # Step 1: Retina check
+        if not is_retina_image(img):
+            return jsonify({'error': 'Uploaded image is not a retina image. Please upload a valid retina image.'}), 400
+
+        # Step 2: Eye disease classification
+        img_array = preprocess_image_for_classification(img)
+        predictions = model.predict(img_array)
+
+        if predictions.shape[-1] != len(class_names):
+            return jsonify({'error': 'Model output shape mismatch.'}), 500
 
         class_index = int(np.argmax(predictions[0]))
         accuracy = float(np.max(predictions[0])) * 100.0
@@ -67,12 +81,10 @@ def predict():
             'remedy': suggest_remedy(class_names[class_index])
         }
 
-        print("Sending prediction result")
         return jsonify({'result': [result]})
-    except Exception as e:
-        print(f"Error in prediction: {e}")
-        return jsonify({'error': str(e)}), 500
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def suggest_remedy(class_name):
     remedies = {
@@ -84,4 +96,4 @@ def suggest_remedy(class_name):
     return remedies.get(class_name, 'No specific remedy found.')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, host='0.0.0.0', port=5001)
