@@ -113,18 +113,3 @@ button:hover {
     color: #f0f0f0;
     box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
 }
-
-/* Responsive design */
-@media (max-width: 600px) {
-    .image-form {
-        padding: 10px;
-    }
-
-    button {
-        width: 100%;
-    }
-
-    .result-card {
-        padding: 15px;
-    }
-}

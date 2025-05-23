@@ -26,13 +26,11 @@ function App() {
     const formData = new FormData();
     formData.append('file', image);
 
-    try {
-      const response = await fetch('http://localhost:5001/predict', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
+        try {
+            const response = await fetch('http://localhost:5001/predict', {
+                method: 'POST',
+                body: formData,
+            });
 
       if (!response.ok) {
         alert(data.error || 'Error during prediction');
@@ -86,59 +84,38 @@ function App() {
     fileInputRef.current.click();
   };
 
-  return (
-    <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
-      <h1>Eye Disease Detection and Remedy</h1>
-      <button onClick={toggleDarkMode} className="dark-mode-toggle">
-        {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      </button>
-
-      <form className="image-form" onSubmit={handleSubmit}>
-        <div
-          className="image-viewer"
-          onClick={handleClick}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-        >
-          {previewImage ? (
-            <img src={previewImage} alt="Preview of uploaded eye image" />
-          ) : (
-            <p className="drag-drop-text">
-              Drag & Drop or Click to Select Image
-            </p>
-          )}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-            accept="image/*"
-            style={{ display: 'none' }}
-          />
+    return (
+        <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
+            <h1>SkinDisease Detection and Remedy</h1>
+            <button onClick={toggleDarkMode}>
+                {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            </button>
+            <form className="image-form" onSubmit={handleSubmit}>
+                <div className="image-viewer"
+                     onClick={handleClick}
+                     onDrop={handleDrop}
+                     onDragOver={handleDragOver}>
+                    { previewImage && <img src={previewImage} alt="Preview" />  }
+                    <p className='drag-drop'>Drag & Drop or Click to Select Image</p>
+                    <input type="file"
+                           ref={fileInputRef}
+                           onChange={handleImageChange}
+                           accept="image/*"
+                           style={{ display: 'none' }} />
+                </div>
+                <button type="submit">Submit</button>
+            </form>
+            {results.map((result, index) => (
+                <div className='result-card' key={index}>
+                    <h2>{result.model}</h2>
+                    <h3>{result.name}</h3>
+                    <p><strong>Class ID:</strong> {result.predicted_class}</p>
+                    <p>Result Accuracy : <strong>{result.accuracy}</strong></p>
+                    <p>{result.remedy}</p>
+                </div>
+            ))}
         </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Analyzing...' : 'Submit'}
-        </button>
-      </form>
-
-      <div className="results-section">
-        {results.length > 0 &&
-          results.map((result, index) => (
-            <div className="result-card" key={index}>
-              <h2>{result.model}</h2>
-              <h3>{result.name}</h3>
-              <p>
-                <strong>Class ID:</strong> {result.predicted_class}
-              </p>
-              <p>
-                Result Accuracy: <strong>{result.accuracy}</strong>
-              </p>
-              <p>{result.remedy}</p>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
+    );
 }
 
 export default App;
