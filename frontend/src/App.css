@@ -1,8 +1,13 @@
+/* Root styling */
 .App {
     text-align: center;
     min-height: 100vh;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.3s, color 0.3s;
 }
 
+/* Image upload form */
 .image-form {
     width: 100%;
     max-width: 500px;
@@ -11,6 +16,7 @@
     box-sizing: border-box;
 }
 
+/* Drag & Drop image upload */
 .image-viewer {
     border: 2px dashed #aaa;
     padding: 20px;
@@ -21,19 +27,25 @@
     cursor: pointer;
     position: relative;
     margin-bottom: 20px;
+    border-radius: 8px;
+    transition: border-color 0.3s;
 }
 
 .image-viewer img {
     max-width: 100%;
     max-height: 300px;
     margin-top: 20px;
+    background-color: #fff;
+    border-radius: 5px;
 }
 
 .image-viewer p {
     margin: 20px 0;
     color: #555;
+    font-size: 16px;
 }
 
+/* Button styling */
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -42,24 +54,34 @@ button {
     color: white;
     border: none;
     border-radius: 5px;
+    transition: background-color 0.3s;
 }
 
 button:hover {
     background-color: #45a049;
 }
 
+/* Toggle button for theme */
+.dark-mode-toggle {
+    margin-bottom: 20px;
+}
 
+/* Dark mode styles */
 .dark-mode {
-    background-color: #333;
-    color: #fff;
+    background-color: #121212;
+    color: #f0f0f0;
 }
 
 .dark-mode .image-viewer {
     border-color: #888;
 }
 
-.dark-mode .image-viewer .drag-drop {
-    color : white;
+.dark-mode .image-viewer p {
+    color: #ccc;
+}
+
+.dark-mode .image-viewer img {
+    background-color: #222;
 }
 
 .dark-mode button {
@@ -71,18 +93,38 @@ button:hover {
     background-color: #666;
 }
 
+/* Result card for predictions */
+.results-section {
+    margin-top: 30px;
+}
+
 .result-card {
-    background: #ddd;
+    background: #eee;
     border-radius: 8px;
-    padding : 20px;
-    margin : 10px 0;
+    padding: 20px;
+    margin: 10px auto;
+    max-width: 600px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .dark-mode .result-card {
     background: #333;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 10px 0;
+    color: #f0f0f0;
     box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .image-form {
+        padding: 10px;
+    }
+
+    button {
+        width: 100%;
+    }
+
+    .result-card {
+        padding: 15px;
+    }
 }

@@ -2,128 +2,143 @@ import React, { useRef, useState } from 'react';
 import './App.css';
 
 function App() {
-    const [image, setImage] = useState(null);
-    const [previewImage, setPreviewImage] = useState(null);
-    const [results, setResults] = useState([]);
-    const [darkMode, setDarkMode] = useState(false);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const fileInputRef = useRef();
+  const [image, setImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const fileInputRef = useRef();
+  const [results, setResults] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    const toggleDarkMode = () => {
-        setDarkMode(!darkMode);
-    };
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError(null);
-        setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        if (!image) {
-            setError('No image selected.');
-            setLoading(false);
-            return;
-        }
+    if (!image) {
+      alert('Please select an image first');
+      return;
+    }
 
-        const formData = new FormData();
-        formData.append('file', image);
+    setLoading(true);
 
-        try {
-            const response = await fetch('http://127.0.0.1:5000/predict', {
-            method: 'POST',
-            body: formData,
-            });
+    const formData = new FormData();
+    formData.append('file', image);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+    try {
+      const response = await fetch('http://localhost:5001/predict', {
+        method: 'POST',
+        body: formData,
+      });
 
-            const data = await response.json();
-            setResults(data.result);
-        } catch (error) {
-            setError('Error during image submission: ' + error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+      const data = await response.json();
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+      if (!response.ok) {
+        alert(data.error || 'Error during prediction');
+        setResults([]);
+        setLoading(false);
+        return;
+      }
 
-    const handleDrop = (e) => {
-        e.preventDefault();
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            setImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+      setResults(data.result);
+    } catch (error) {
+      console.error('Error during image submission:', error);
+      alert('Network error or server not reachable');
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleDragOver = (e) => {
-        e.preventDefault();
-    };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      setResults([]);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-    const handleClick = () => {
-        fileInputRef.current.click();
-    };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      setImage(file);
+      setResults([]);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-    return (
-        <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
-            <h1>Eye Disease Detection and Remedy</h1>
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
 
-            <button onClick={toggleDarkMode} className="mode-toggle">
-                {darkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
-            </button>
+  const handleClick = () => {
+    fileInputRef.current.click();
+  };
 
-            <form className="image-form" onSubmit={handleSubmit}>
-                <div className="image-viewer"
-                     onClick={handleClick}
-                     onDrop={handleDrop}
-                     onDragOver={handleDragOver}>
-                    {previewImage ? (
-                        <img src={previewImage} alt="Preview" className="preview" />
-                    ) : (
-                        <p className="drag-drop">Drag & Drop or Click to Select Image</p>
-                    )}
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageChange}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                    />
-                </div>
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Submitting...' : 'Submit'}
-                </button>
-            </form>
+  return (
+    <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
+      <h1>Eye Disease Detection and Remedy</h1>
+      <button onClick={toggleDarkMode} className="dark-mode-toggle">
+        {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      </button>
 
-            {error && <p className="error">{error}</p>}
-
-            {results.map((result, index) => (
-                <div className="result-card" key={index}>
-                    <h2>{result.model}</h2>
-                    <h3>{result.name}</h3>
-                    <p><strong>Class ID:</strong> {result.predicted_class}</p>
-                    <p><strong>Accuracy:</strong> {result.accuracy}</p>
-                    <p><strong>Remedy:</strong> {result.remedy}</p>
-                </div>
-            ))}
+      <form className="image-form" onSubmit={handleSubmit}>
+        <div
+          className="image-viewer"
+          onClick={handleClick}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          {previewImage ? (
+            <img src={previewImage} alt="Preview of uploaded eye image" />
+          ) : (
+            <p className="drag-drop-text">
+              Drag & Drop or Click to Select Image
+            </p>
+          )}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
         </div>
-    );
+
+        <button type="submit" disabled={loading}>
+          {loading ? 'Analyzing...' : 'Submit'}
+        </button>
+      </form>
+
+      <div className="results-section">
+        {results.length > 0 &&
+          results.map((result, index) => (
+            <div className="result-card" key={index}>
+              <h2>{result.model}</h2>
+              <h3>{result.name}</h3>
+              <p>
+                <strong>Class ID:</strong> {result.predicted_class}
+              </p>
+              <p>
+                Result Accuracy: <strong>{result.accuracy}</strong>
+              </p>
+              <p>{result.remedy}</p>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
 }
 
 export default App;
