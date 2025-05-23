@@ -1,26 +1,45 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  
 from PIL import Image
+from io import BytesIO
 import numpy as np
 import tensorflow as tf
+import imghdr
 
 app = Flask(__name__)
 CORS(app)
 
-# Load TFLite model and allocate tensors
-interpreter = tf.lite.Interpreter(model_path='eye_disease_model.tflite')
-interpreter.allocate_tensors()
+# Load the trained DenseNet model once
+model = tf.keras.models.load_model('densenet.h5')
 
-# Get input and output tensor details
+# Load TFLite retina check model once
+interpreter = tf.lite.Interpreter(model_path="model_binaray.tflite")
+interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
 class_names = ['cataract', 'diabetic_retinopathy', 'glaucoma', 'normal']
 image_size = (224, 224)
 
-@app.route('/')
-def home():
-    return "Backend is running"
+def preprocess_image_for_tflite(img):
+    img = img.resize(image_size).convert('RGB')
+    img_array = np.array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0).astype(np.float32)
+    return img_array
+
+def is_retina_image(img):
+    img_array = preprocess_image_for_tflite(img)
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+    prediction = np.round(output_data[0][0])
+    return bool(prediction)
+
+def preprocess_image_for_classification(img):
+    img = img.resize(image_size).convert('RGB')
+    img_array = np.array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    return img_array
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -32,14 +51,24 @@ def predict():
         return jsonify({'error': 'Empty file received'}), 400
 
     try:
-        img = Image.open(file).convert('RGB').resize(image_size)
-        img_array = np.array(img, dtype=np.float32) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
+        file_bytes = file.read()
+        file_type = imghdr.what(None, h=file_bytes)
+        if file_type not in ['jpeg', 'png', 'jpg']:
+            return jsonify({'error': 'Invalid image format. Use JPEG or PNG.'}), 400
 
-        # Set the tensor to the image
-        interpreter.set_tensor(input_details[0]['index'], img_array)
-        interpreter.invoke()
-        predictions = interpreter.get_tensor(output_details[0]['index'])
+        # Use BytesIO to wrap the raw bytes for PIL Image open
+        img = Image.open(BytesIO(file_bytes)).convert('RGB')
+
+        # Step 1: Retina check
+        if not is_retina_image(img):
+            return jsonify({'error': 'Uploaded image is not a retina image. Please upload a valid retina image.'}), 400
+
+        # Step 2: Eye disease classification
+        img_array = preprocess_image_for_classification(img)
+        predictions = model.predict(img_array)
+
+        if predictions.shape[-1] != len(class_names):
+            return jsonify({'error': 'Model output shape mismatch.'}), 500
 
         class_index = int(np.argmax(predictions[0]))
         accuracy = float(np.max(predictions[0])) * 100.0
@@ -53,6 +82,7 @@ def predict():
         }
 
         return jsonify({'result': [result]})
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -66,4 +96,4 @@ def suggest_remedy(class_name):
     return remedies.get(class_name, 'No specific remedy found.')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
