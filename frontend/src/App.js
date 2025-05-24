@@ -27,7 +27,7 @@ function App() {
     formData.append('file', image);
 
     try {
-      const response = await fetch('https://eyebackend.onrender.com/predict', {
+      const response = await fetch('http://localhost:5001/predict', {
         method: 'POST',
         body: formData,
       });
