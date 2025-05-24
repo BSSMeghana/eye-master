@@ -5,12 +5,13 @@ from io import BytesIO
 import numpy as np
 import tensorflow as tf
 import imghdr
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # Load TFLite retina check model
-retina_interpreter = tf.lite.Interpreter(model_path="model_binaray.tflite")
+retina_interpreter = tf.lite.Interpreter(model_path="resnet50_retina_classifier_quant.tflite")
 retina_interpreter.allocate_tensors()
 retina_input_details = retina_interpreter.get_input_details()
 retina_output_details = retina_interpreter.get_output_details()
@@ -94,4 +95,5 @@ def suggest_remedy(class_name):
     return remedies.get(class_name, 'No specific remedy found.')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=True, host='0.0.0.0', port=port)

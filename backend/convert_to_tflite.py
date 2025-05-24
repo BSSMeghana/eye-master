@@ -1,14 +1,16 @@
 import tensorflow as tf
 
-# Load your Keras model
-model = tf.keras.models.load_model('densenet.h5')
+keras_model_path = "resnet50_retina_classifier.h5"
 
-# Convert the model to TensorFlow Lite format
+model = tf.keras.models.load_model(keras_model_path)
+
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
-tflite_model = converter.convert()
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
 
-# Save the TFLite model
-with open('densenet.tflite', 'wb') as f:
-    f.write(tflite_model)
+tflite_quant_model = converter.convert()
 
-print("✅ Conversion complete: densenet.tflite saved.")
+quant_model_path = "resnet50_retina_classifier_quant.tflite"
+with open(quant_model_path, "wb") as f:
+    f.write(tflite_quant_model)
+
+print(f"Quantized model saved as {quant_model_path}")
